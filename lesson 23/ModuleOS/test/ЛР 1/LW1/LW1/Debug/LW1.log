@@ -1,0 +1,4 @@
+﻿  main.cpp
+  Note: including lib: glut32.lib
+C:\Users\Егор\Desktop\Бауманка\4 семестр\Компьютерная графика\ЛР 1\LW1\LW1\main.cpp(66,1): warning C4326: возвращаемый тип "main" должен быть "int", а не "void"
+  LW1.vcxproj -> C:\Users\Егор\Desktop\Бауманка\4 семестр\Компьютерная графика\ЛР 1\LW1\Debug\LW1.exe
