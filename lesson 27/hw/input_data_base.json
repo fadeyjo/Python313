@@ -1,0 +1,12 @@
+[
+    {
+        "surname": "\u0421\u0438\u0431\u0435\u043b\u0435\u0432",
+        "name": "\u0418\u043b\u044c\u044f",
+        "patronimyc": "\u0412\u043b\u0430\u0434\u0438\u043c\u0438\u0440\u043e\u0432\u0438\u0447",
+        "age": 19,
+        "series_of_pasport": 1234,
+        "number_of_pasport": 567890,
+        "account_number": 12233,
+        "account_balance_RUB": 10000000
+    }
+]

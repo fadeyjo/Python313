@@ -1,5 +1,6 @@
 import os
 import re
+import json
 
 class Menu:
     def __init__(self, type_of_menu: str):
@@ -30,10 +31,17 @@ class Menu:
             print(f'[{number + 1}]\t{title}')
 
 class Data_base:
-    def __init__(self, type_of_entity):
+    RUB_to_USD = 1 / 92.75
+    RUB_to_EUR = 1 / 100.44
+
+    def __init__(self, type_of_entity, input_file_name=False):
         self.__type_of_entity = type_of_entity
         self.__data_base = []
-        self.__create_data_base()
+        if input_file_name:
+            self.__input_file_name = input_file_name
+            self.__read_data_base()
+        else:
+            self.__create_data_base()
     
     def __create_data_base(self):
         quantity_of_clients = Validator.input_valid_positive_int('Введите количество вводимых клиентов: ')
@@ -52,16 +60,52 @@ class Data_base:
         self.print_data_base()
         number = Validator.input_valid_positive_int_with_up_boundary('Введите номер удаляемой записи: ', len(self.__data_base))
         del self.__data_base[number - 1]
+    
+    def output_to_JSON(self, file_name):
+        self.__dict_view = [element.create_object() for element in self.__data_base]
+        with open(file_name, 'w') as output_file:
+            json.dump(self.__dict_view, output_file, indent=4)
+    
+    def __read_data_base(self):
+        with open(self.__input_file_name, 'r') as input_file:
+            data = json.load(input_file)
+        for element in data:
+            self.__data_base.append(self.__type_of_entity(element))
+    
+    def reboot_info(self):
+        for element in self.__data_base:
+            element.reboot_self_info()
 
 class Client:
-    def __init__(self):
-        self.__surname = Validator.input_valid_snp('Введите фамилию: ')
-        self.__name = Validator.input_valid_snp('Введите имя: ')
-        self.__patronimyc = Validator.input_valid_snp('Введите отчество: ')
-        self.__age = Validator.input_valid_positive_int_with_down_boundary('Введите возраст: ', 18)
-        self.__number_of_pasport = Validator.input_valid_series_of_pasport()
-        self.__series_of_pasport = Validator.input_valid_number_of_pasport()
-        self.__account_number = Validator.input_valid_account_number()
+    def __init__(self, client_object=False):
+        if client_object:
+            self.__surname = client_object['surname']
+            self.__name = client_object['name']
+            self.__patronimyc = client_object['patronimyc']
+            self.__age = client_object['age']
+            self.__series_of_pasport = client_object['series_of_pasport']
+            self.__number_of_pasport = client_object['number_of_pasport']
+            self.__account_number = client_object['account_number']
+            self.__account_balance_RUB = client_object['account_balance_RUB']
+            self.__account_balance_USD = self.__rubles_to_USD()
+            self.__account_balance_EUR = self.__rubles_to_EUR()
+        else:
+            self.__surname = Validator.input_valid_snp('Введите фамилию: ')
+            self.__name = Validator.input_valid_snp('Введите имя: ')
+            self.__patronimyc = Validator.input_valid_snp('Введите отчество: ')
+            self.__age = Validator.input_valid_positive_int_with_down_boundary('Введите возраст: ', 18)
+            self.__series_of_pasport = Validator.input_valid_series_of_pasport()
+            self.__number_of_pasport = Validator.input_valid_number_of_pasport()
+            self.__account_number = Validator.input_valid_account_number()
+            self.__account_balance_RUB = Validator.input_valid_positive_int('Введите баланс счета (в рублях): ')
+            self.__account_balance_USD = self.__rubles_to_USD()
+            self.__account_balance_EUR = self.__rubles_to_EUR()
+    
+    def __rubles_to_USD(self):
+        return round(self.__account_balance_RUB * Data_base.RUB_to_USD, 2)
+
+    def __rubles_to_EUR(self):
+        return round(self.__account_balance_RUB * Data_base.RUB_to_EUR, 2)
     
     def print_self_data(self):
         print(f'Фамилия: {self.__surname}')
@@ -70,6 +114,25 @@ class Client:
         print(f'Возраст: {self.__age}')
         print(f'Серия и номер паспорта: {' '.join([str(self.__series_of_pasport), str(self.__number_of_pasport)])}')
         print(f'Номер счёта: {self.__account_number}')
+        print(f'Баланс в рублях: {self.__account_balance_RUB} RUB')
+        print(f'Номер в долларах: {self.__account_balance_USD} USD')
+        print(f'Номер в евро: {self.__account_balance_EUR} EUR')
+    
+    def create_object(self):
+        return {
+            'surname': self.__surname,
+            'name': self.__name,
+            'patronimyc': self.__patronimyc,
+            'age': self.__age,
+            'series_of_pasport': self.__series_of_pasport,
+            'number_of_pasport': self.__number_of_pasport,
+            'account_number': self.__account_number,
+            'account_balance_RUB': self.__account_balance_RUB,
+        }
+    
+    def reboot_self_info(self):
+        self.__account_balance_USD = self.__rubles_to_USD()
+        self.__account_balance_EUR = self.__rubles_to_EUR()
 
 class Validator:
     @staticmethod
@@ -115,6 +178,20 @@ class Validator:
         return value
     
     @staticmethod
+    def input_valid_positive_float(text_for_input: str):
+        while True:
+            try:
+                value = float(input(text_for_input))
+                if value < 1:
+                    raise Exception
+                break
+            except ValueError:
+                print('Некорректный ввод. Повторите попытку.')
+            except Exception:
+                print('Невозможный ввод. Повторите Попытку.')
+        return value
+    
+    @staticmethod
     def input_valid_snp(text_for_input: str):
         while True:
             value = input(text_for_input)
@@ -150,7 +227,7 @@ class Validator:
     @staticmethod
     def input_valid_account_number():
         while True:
-            value = input('Введите номер счёта: ')
+            value = input('Введите номер счёта (5 цифр): ')
             expresions = re.findall('[0-9]', value)
             if len(expresions) == len(value) == 5:
                 break
@@ -159,32 +236,52 @@ class Validator:
         return int(value)
 
 def create_local_data_base_of_clients():
-    global data_base_of_clients
-    data_base_of_clients = Data_base(Client)
+    if 'data_base_of_clients' in globals():
+        print('Локальная база данных уже существует.')
+    else:
+        global data_base_of_clients
+        data_base_of_clients = Data_base(Client)
     
 def print_local_data_base_of_clients():
-    data_base_of_clients.print_data_base()
+    if 'data_base_of_clients' in globals():
+        data_base_of_clients.print_data_base()
+    else:
+        print('Локальная база данных не существует.')
     
 def add_client_to_local_data_base_of_clients():
-    data_base_of_clients.add_new_element()
+    if 'data_base_of_clients' in globals():
+        data_base_of_clients.add_new_element()
+    else:
+        print('Локальная база данных не существует.')
     
 def delete_client_from_local_data_base_of_clients():
-    data_base_of_clients.delete_element()
+    if 'data_base_of_clients' in globals():
+        data_base_of_clients.delete_element()
+    else:
+        print('Локальная база данных не существует.')
     
 def output_local_data_base_of_clients_to_JSON_file():
-    ...
+    if 'data_base_of_clients' in globals():
+        data_base_of_clients.output_to_JSON('output_data_base.json')
+    else:
+        print('Локальная база данных не существует.')
     
 def input_data_base_of_clients_from_JSON_file_to_local_data_base():
-    ...
+    if 'data_base_of_clients' in globals():
+        print('Локальная база данных уже существует.')
+    else:
+        global data_base_of_clients
+        data_base_of_clients = Data_base(Client, 'input_data_base.json')
     
 def redact_course_of_ruble_about_dollar():
-    ...
+    Data_base.RUB_to_USD = 1 / Validator.input_valid_positive_float('1 доллар это сколько в рублях: ')
+    data_base_of_clients.reboot_info()
+    print('Инфоромация клиентов изменена.')
     
 def redact_course_of_ruble_about_euro():
-    ...
-    
-def exit_from_administrator_menu():
-    ...
+    Data_base.RUB_to_EUR = 1 / Validator.input_valid_positive_float('1 евро это сколько в рублях: ')
+    data_base_of_clients.reboot_info()
+    print('Инфоромация клиентов изменена.')
 
 administrator_menu = Menu('Меню администратора.')
 administrator_menu.add_menu_item('Создать локальную базу данных клиентов банка.', create_local_data_base_of_clients)
